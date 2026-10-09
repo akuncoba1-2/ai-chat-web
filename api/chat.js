@@ -9,7 +9,6 @@ export default async function handler(req, res) {
     const API_KEY = process.env.GEMINI_API_KEY;
     if (!API_KEY) return res.status(500).json({ error: 'API key belum diset' });
 
-    // Ubah format pesan ke format Gemini
     const contents = messages.map(m => ({
         role: m.role === 'assistant' ? 'model' : 'user',
         parts: [{ text: m.content }]
@@ -17,7 +16,7 @@ export default async function handler(req, res) {
 
     try {
         const response = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`,
+            `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${API_KEY}`,
             {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -34,7 +33,14 @@ export default async function handler(req, res) {
             }
         );
 
-        const data = await response.json();
+        const text = await response.text();
+        let data;
+        try {
+            data = JSON.parse(text);
+        } catch (e) {
+            return res.status(500).json({ error: 'Server balas: ' + text.substring(0, 200) });
+        }
+
         if (!response.ok) {
             return res.status(response.status).json({ error: data.error?.message || 'Gagal memanggil AI' });
         }
