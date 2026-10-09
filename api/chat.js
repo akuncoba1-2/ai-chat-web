@@ -19,17 +19,27 @@ export default async function handler(req, res) {
                 'X-Title': 'AI Chat Web'
             },
             body: JSON.stringify({
-                model: model: 'qwen/qwen-2.5-7b-instruct:free',
+                model: 'meta-llama/llama-3.2-3b-instruct:free',
                 messages: [
                     { role: 'system', content: systemPrompt || 'Kamu adalah asisten AI yang cerdas dan ramah.' },
                     ...messages
                 ],
                 temperature: 0.7,
-                max_tokens: 2048
+                max_tokens: 1024
             })
         });
-        const data = await response.json();
-        if (!response.ok) return res.status(response.status).json({ error: data.error?.message || 'Gagal memanggil AI' });
+
+        const text = await response.text();
+        let data;
+        try {
+            data = JSON.parse(text);
+        } catch (e) {
+            return res.status(500).json({ error: 'Server balas: ' + text.substring(0, 200) });
+        }
+
+        if (!response.ok) {
+            return res.status(response.status).json({ error: data.error?.message || 'Gagal memanggil AI' });
+        }
         const reply = data.choices?.[0]?.message?.content || 'Maaf, tidak ada respons.';
         res.status(200).json({ reply });
     } catch (error) {
