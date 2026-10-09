@@ -13,10 +13,10 @@ export default async function handler(req, res) {
         role: m.role === 'assistant' ? 'model' : 'user',
         parts: [{ text: m.content }]
     }));
-
+    
     try {
         const response = await fetch(
-            `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${API_KEY}`,
+            `https://generativelanguage.googleapis.com/v1/models/gemini-3.8-flash:generateContent?key=${API_KEY}`,
             {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
