@@ -6,41 +6,40 @@ export default async function handler(req, res) {
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
     const { messages, systemPrompt } = req.body;
-    const API_KEY = process.env.OPENROUTER_API_KEY;
+    const API_KEY = process.env.GEMINI_API_KEY;
     if (!API_KEY) return res.status(500).json({ error: 'API key belum diset' });
 
+    // Ubah format pesan ke format Gemini
+    const contents = messages.map(m => ({
+        role: m.role === 'assistant' ? 'model' : 'user',
+        parts: [{ text: m.content }]
+    }));
+
     try {
-        const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${API_KEY}`,
-                'Content-Type': 'application/json',
-                'HTTP-Referer': 'https://ai-chat-web-chi.vercel.app',
-                'X-Title': 'AI Chat Web'
-            },
-            body: JSON.stringify({
-                model: 'meta-llama/llama-3.2-3b-instruct:free',
-                messages: [
-                    { role: 'system', content: systemPrompt || 'Kamu adalah asisten AI yang cerdas dan ramah.' },
-                    ...messages
-                ],
-                temperature: 0.7,
-                max_tokens: 1024
-            })
-        });
+        const response = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`,
+            {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    systemInstruction: {
+                        parts: [{ text: systemPrompt || 'Kamu adalah asisten AI yang cerdas dan ramah.' }]
+                    },
+                    contents: contents,
+                    generationConfig: {
+                        temperature: 0.7,
+                        maxOutputTokens: 2048
+                    }
+                })
+            }
+        );
 
-        const text = await response.text();
-        let data;
-        try {
-            data = JSON.parse(text);
-        } catch (e) {
-            return res.status(500).json({ error: 'Server balas: ' + text.substring(0, 200) });
-        }
-
+        const data = await response.json();
         if (!response.ok) {
             return res.status(response.status).json({ error: data.error?.message || 'Gagal memanggil AI' });
         }
-        const reply = data.choices?.[0]?.message?.content || 'Maaf, tidak ada respons.';
+
+        const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || 'Maaf, tidak ada respons.';
         res.status(200).json({ reply });
     } catch (error) {
         res.status(500).json({ error: 'Server error: ' + error.message });
