@@ -19,7 +19,7 @@ export default async function handler(req, res) {
                 'X-Title': 'AI Chat Web'
             },
             body: JSON.stringify({
-                model: 'meta-llama/llama-3.1-8b-instruct:free',
+                model: 'meta-llama/llama-3.3-70b-instruct:free',
                 messages: [
                     { role: 'system', content: systemPrompt || 'Kamu adalah asisten AI yang cerdas dan ramah.' },
                     ...messages
