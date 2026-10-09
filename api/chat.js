@@ -6,18 +6,20 @@ export default async function handler(req, res) {
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
     const { messages, systemPrompt } = req.body;
-    const GROQ_API_KEY = process.env.GROQ_API_KEY;
-    if (!GROQ_API_KEY) return res.status(500).json({ error: 'API key belum diset' });
+    const API_KEY = process.env.OPENROUTER_API_KEY;
+    if (!API_KEY) return res.status(500).json({ error: 'API key belum diset' });
 
     try {
-        const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
             method: 'POST',
             headers: {
-                'Authorization': `Bearer ${GROQ_API_KEY}`,
-                'Content-Type': 'application/json'
+                'Authorization': `Bearer ${API_KEY}`,
+                'Content-Type': 'application/json',
+                'HTTP-Referer': 'https://ai-chat-web-chi.vercel.app',
+                'X-Title': 'AI Chat Web'
             },
             body: JSON.stringify({
-                model: 'llama-3.1-8b-instant',
+                model: 'meta-llama/llama-3.1-8b-instruct:free',
                 messages: [
                     { role: 'system', content: systemPrompt || 'Kamu adalah asisten AI yang cerdas dan ramah.' },
                     ...messages
